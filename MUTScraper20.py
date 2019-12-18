@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 import warnings;
-
+from random import shuffle
 warnings.simplefilter('ignore')
 import time
 import re
@@ -10,10 +10,12 @@ import json
 from tqdm import tqdm_notebook as tqdm
 
 #   Classes:
-#       - Player: object to store data for mut card
 #
-#       - PlayerHandler: class to compile and work with player objects
+#       Player: object to store data for mut card
 #
+#       PlayerHandler: class to compile and work with player objects
+#
+#       JSONParser: parse json items from player pages and convert to csv
 
 prefix = 'https://www.muthead.com'
 
@@ -34,7 +36,8 @@ class Player:
     def get_json(self):
         tag = self.soup.find('article', class_='mut-card')
         if tag is None:
-            print(f'No json found for {self.link}')
+            #print(f'No json found for {self.link}')
+            print("No json found for", self.link)
         else:
             json_str = tag.attrs['data-props']
             player_dict = json.loads(json_str)
@@ -74,11 +77,13 @@ class PlayerHandler:
         except:
             print('Error getting number of pages')
             n_pages = 0
-        print(f'Number of pages: {n_pages}')
+        #print(f'Number of pages: {n_pages}')
+        print('Number of pages:', n_pages)
         return n_pages
 
     def save_player_json(self, dict_list):
-        with open(f'player_json_{self.date}', 'w') as fout:
+        #with open(f'player_json_{self.date}', 'w') as fout:
+        with open('player_json_'+self.date, 'w') as fout:
             json.dump(dict_list, fout)
 
     def get_player_links(self):
@@ -87,7 +92,8 @@ class PlayerHandler:
         for i in range(1, self.n_pages + 1):
 
             try:
-                url = f'{self.url}?page={i}'
+                #url = f'{self.url}?page={i}'
+                url = self.url + '&page=' + str(i)
                 response = requests.get(url)
                 soup = BeautifulSoup(response.text, 'lxml')
 
@@ -95,12 +101,15 @@ class PlayerHandler:
                     links.append(link.get('href'))
 
             except Exception:
-                print(f'breaking... {len(links)} links gathered.')
+                #print(f'breaking... {len(links)} links gathered.')
+                print('breaking...', len(links),  'links gathered.')
                 break
 
         self.player_links = [s for s in links if 'prices' not in s]
         self.player_links = [x for x in self.player_links if x != '/20/players/']
-        print(f' {len(self.player_links)} player links gathered.')
+        shuffle(self.player_links)
+        #print(f' {len(self.player_links)} player links gathered.')
+        print(len(self.player_links), 'player links gathered.')
 
     def make_player_list(self):
 
@@ -139,7 +148,7 @@ class JSONParser:
                'toughness': 'TGH'}
 
     other_keepers = ['image', 'jersey_number', 'last_name', 'last_updated', 'name', 'program_id', 'has_power_up',
-                     'quicksell_amount', 'quicksell_currency', 'release_date', 'running_style', 'salary_cap_cost']
+                     'quicksell_amount', 'quicksell_currency', 'release_date', 'running_style', 'salary_cap_cost', 'archetype_id']
 
     both_traits = ['trait_clutch', 'trait_high_motor', 'trait_penalty', ]
     off_traits = ['trait_aggressive_catches', 'trait_covers_the_ball', 'trait_drops_open_passes',
@@ -160,7 +169,7 @@ class JSONParser:
     defs = ['BKS', 'FNM', 'TAK', 'MCV', 'POW', 'PRC', 'PRS', 'PUR', 'PWM']
     kicks = ['KAC', 'KPW']
     words_for_all = ['image', 'jersey_number', 'last_name', 'player_id', 'program',
-                     'quicksell_amount', 'release_date', 'salary_cap_cost', 'team', 'has_power_up']
+                     'quicksell_amount', 'release_date', 'salary_cap_cost', 'team', 'has_power_up', 'archetype_id']
 
     position_dict = {'QB': ['QB'],
                      'OFF': ['LT', 'LG', 'C', 'RG', 'RT', 'TE', 'WR', 'HB', 'QB'],
@@ -174,7 +183,8 @@ class JSONParser:
 
     def __init__(self, date):
         self.date = date
-        self.filename = f'player_json_{date}'
+        #self.filename = f'player_json_{date}'
+        self.filename = 'player_json_' + date
         self.datastore = []
         self.parsed_items = []
         self.df_dict = {}
@@ -223,6 +233,9 @@ class JSONParser:
         self.df_dict = {}
 
         for pos_group, positions in self.position_dict.items():
-            self.df_dict[pos_group] = self.df[ self.df['position'].isin(self.position_dict[pos_group])][self.orders_dict[pos_group]]
-            self.df_dict[pos_group].reset_index(drop=True).to_csv(f'{self.date}_{pos_group}.csv', index=False)
-
+            try:
+                self.df_dict[pos_group] = self.df[ self.df['position'].isin(self.position_dict[pos_group])][self.orders_dict[pos_group]]
+                #self.df_dict[pos_group].reset_index(drop=True).to_csv(f'{self.date}_{pos_group}.csv', index=False)
+                self.df_dict[pos_group].reset_index(drop=True).to_csv('_'.join([self.date, pos_group]) + '.csv', index=False)
+            except:
+                pass
