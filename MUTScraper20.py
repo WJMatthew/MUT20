@@ -2,8 +2,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 import warnings;
-from random import shuffle
 warnings.simplefilter('ignore')
+from random import shuffle
 import time
 import re
 import json
@@ -22,6 +22,24 @@ import os
 
 prefix = 'https://www.muthead.com'
 DATA_PATH = 'data'
+
+# Map archetype_id to archtype name (incomplete - no defensive yet)
+# TODO: where are the FBs?
+archetype_map = {4: 'Field General (QB)', 16: 'Improvisor (QB)', 40: 'Scrambler (QB)', 45: 'Strong Arm (QB)',
+                 5: 'Physical (WR)', 8: 'Route Running (WR)', 10: 'Deep Threat (WR)', 36: 'Slot (WR)',
+                 47: 'Unknown',
+                 26: 'Elusive Back (HB)', 30: 'Powerback (HB)', 33: 'Receiving Back (HB)',
+                 15: 'Power (OT)', 7: 'Pass Protector (OT)',
+                 11: 'Power (OG)', 19: 'Pass Protector (OG)', 46: 'Agile (OG)',
+                 18: 'Power (C)', 38: 'Agile (C)', 39: 'Pass Protector (C)',
+                 3: 'Vertical Threat (TE)', 14: 'Blocking (TE)', 44: 'Possession (TE)',
+                 }
+
+def get_archtype(arch_id):
+    if arch_id in archetype_map.keys():
+        return archetype_map[arch_id]
+    else:
+        return 'N/A'
 
 def make_dirs(path):
     """
