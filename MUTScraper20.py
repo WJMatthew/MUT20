@@ -8,6 +8,7 @@ import time
 import re
 import json
 from tqdm import tqdm_notebook as tqdm
+import os
 
 #   Classes:
 #
@@ -17,10 +18,41 @@ from tqdm import tqdm_notebook as tqdm
 #
 #       JSONParser: parse json items from player pages and convert to csv
 
+# Note: f-strings currently commented out due to python version
+
 prefix = 'https://www.muthead.com'
+DATA_PATH = 'data'
+
+def make_dirs(path):
+    """
+    
+    """
+    if not os.path.isdir(path):
+        print("Creating directory", path)
+        os.makedirs(path)
+        
+def save_to_csv(new_df, path):
+    """
+    """
+    if os.path.isfile(path):
+        try:
+            df = pd.read_csv(path)
+            assert df.shape[1] == new_df.shape[1]
+            df = pd.concat([df, new_df])
+            df.to_csv(path, index=False)
+        except:
+            print("Error saving to csv! (1)", path)
+    else:
+        try:
+            print("Creating file", path)
+            new_df.to_csv(path, index=False)
+        except:
+            print("Error saving to csv! (2)", path)
 
 
 class Player:
+    """
+    """
 
     def __init__(self, link):
         self.link = link
@@ -47,6 +79,8 @@ class Player:
 
 
 class PlayerHandler:
+    """
+    """
 
     def __init__(self, date, url='https://www.muthead.com/20/players/', pages=0):
         self.url = url
@@ -63,12 +97,16 @@ class PlayerHandler:
         self.print_first_page_link()
 
     def handle_players(self, pages=None):
+        """
+        """
         if pages is not None:
             self.n_pages = pages
         self.get_player_links()
         self.make_player_list()
 
     def get_num_pages(self):
+        """
+        """
         response = requests.get(self.url)
         soup = BeautifulSoup(response.text, 'lxml')
         try:
@@ -82,11 +120,15 @@ class PlayerHandler:
         return n_pages
 
     def save_player_json(self, dict_list):
+        """
+        """
         #with open(f'player_json_{self.date}', 'w') as fout:
         with open('player_json_'+self.date, 'w') as fout:
             json.dump(dict_list, fout)
 
     def get_player_links(self):
+        """
+        """
         links = []
 
         for i in range(1, self.n_pages + 1):
@@ -112,6 +154,8 @@ class PlayerHandler:
         print(len(self.player_links), 'player links gathered.')
 
     def make_player_list(self):
+        """
+        """
 
         for player_link in self.player_links:
             p = Player(player_link)
@@ -125,10 +169,14 @@ class PlayerHandler:
         self.save_player_json(self.player_dicts)
 
     def print_first_page_link(self):
+        """
+        """
         print(self.url)
 
 
 class JSONParser:
+    """
+    """
 
     abbrevs = {'acceleration': 'ACC', 'agility': 'AGI', 'awareness': 'AWR', 'ball_carrier_vision': 'BCV',
                'block_shedding': 'BKS', 'break_sack': 'BSK', 'break_tackle': 'BTK', 'carrying': 'CAR',
@@ -153,7 +201,7 @@ class JSONParser:
     both_traits = ['trait_clutch', 'trait_high_motor', 'trait_penalty', ]
     off_traits = ['trait_aggressive_catches', 'trait_covers_the_ball', 'trait_drops_open_passes',
                   'trait_fights_for_extra_yards', 'trait_makes_sideline_catches', 'trait_possession_catches',
-                  'trait_rac_catches', 'trait_makes_sideline_catches']
+                  'trait_rac_catches']
     qb_traits = ['trait_forces_passes', 'trait_qb_style', 'trait_sense_pressure', 'trait_throw_ball_away',
                  'trait_throws_tight_spiral']
     def_traits = ['trait_big_hitter', 'trait_lb_style', 'trait_plays_ball_in_the_air',
@@ -168,7 +216,7 @@ class JSONParser:
             'RBK', 'RBP', 'RLS', 'PBF', 'PBK', 'PBP']
     defs = ['BKS', 'FNM', 'TAK', 'MCV', 'POW', 'PRC', 'PRS', 'PUR', 'PWM']
     kicks = ['KAC', 'KPW']
-    words_for_all = ['image', 'jersey_number', 'last_name', 'player_id', 'program',
+    words_for_all = ['image', 'jersey_number', 'last_name', 'player_id', 
                      'quicksell_amount', 'release_date', 'salary_cap_cost', 'team', 'has_power_up', 'archetype_id']
 
     position_dict = {'QB': ['QB'],
@@ -189,6 +237,7 @@ class JSONParser:
         self.parsed_items = []
         self.df_dict = {}
         self.df = None
+        make_dirs(DATA_PATH)
 
     def parse_player_json(self, player_dict):
 
@@ -233,9 +282,15 @@ class JSONParser:
         self.df_dict = {}
 
         for pos_group, positions in self.position_dict.items():
+       
             try:
                 self.df_dict[pos_group] = self.df[ self.df['position'].isin(self.position_dict[pos_group])][self.orders_dict[pos_group]]
                 #self.df_dict[pos_group].reset_index(drop=True).to_csv(f'{self.date}_{pos_group}.csv', index=False)
-                self.df_dict[pos_group].reset_index(drop=True).to_csv('_'.join([self.date, pos_group]) + '.csv', index=False)
+                #self.df_dict[pos_group].reset_index(drop=True).to_csv('_'.join([self.date, pos_group]) + '.csv', index=False)
+                if len(self.df_dict[pos_group]) > 0:
+                    new = self.df_dict[pos_group].reset_index(drop=True)
+                    new['date_scraped'] = self.date
+                    path = os.path.join(DATA_PATH, '.'.join([pos_group, 'csv']))
+                    save_to_csv(new, path)
             except:
                 pass
