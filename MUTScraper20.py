@@ -23,6 +23,7 @@ import os
 prefix = 'https://www.muthead.com'
 DATA_PATH = 'data'
 
+
 # Map archetype_id to archtype name (incomplete - no defensive yet)
 # TODO: where are the FBs?
 archetype_map = {4: 'Field General (QB)', 16: 'Improvisor (QB)', 40: 'Scrambler (QB)', 45: 'Strong Arm (QB)',
@@ -68,6 +69,17 @@ def save_to_csv(new_df, path):
             print("Error saving to csv! (2)", path)
 
 
+def make_set_of_completed_player_ids():
+    completed_ids = set()
+        
+    dfs = {}
+
+    for file in os.listdir(DATA_PATH):
+        if '.csv' in file:
+            df = pd.read_csv(os.path.join(DATA_PATH, file))
+            _ = [completed_ids.add(int(v)) for v in df['player_id'].values]
+    return completed_ids # set(int)
+            
 class Player:
     """
     """
@@ -120,6 +132,8 @@ class PlayerHandler:
         if pages is not None:
             self.n_pages = pages
         self.get_player_links()
+        # TODO: not working, also drop duplicates of player_id if not this (AND)
+        self.filter_player_links()
         self.make_player_list()
 
     def get_num_pages(self):
@@ -143,6 +157,15 @@ class PlayerHandler:
         #with open(f'player_json_{self.date}', 'w') as fout:
         with open('player_json_'+self.date, 'w') as fout:
             json.dump(dict_list, fout)
+            
+    def filter_player_links(self):
+        """
+        Remove already scraped players from player_links
+        """
+        print("Filtering player list, before:", len(self.player_links))
+        completed_ids = make_set_of_completed_player_ids()
+        self.player_links = [x for x in self.player_links if int(x.rstrip('/').split('/')[-1]) not in completed_ids]
+        print("Completed filtering, after:", len(self.player_links))
 
     def get_player_links(self):
         """
