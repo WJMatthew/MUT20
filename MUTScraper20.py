@@ -255,7 +255,7 @@ class JSONParser:
     qbs = ['DAC', 'MAC', 'SAC', 'TAC', 'THP', 'TOR', 'TUP', 'PAC']
     offs = ['BCV', 'BSK', 'BTK', 'DRR', 'MRR', 'SRR', 'LBK', 'RBF',
             'RBK', 'RBP', 'RLS', 'PBF', 'PBK', 'PBP']
-    defs = ['BKS', 'FNM', 'TAK', 'MCV', 'POW', 'PRC', 'PRS', 'PUR', 'PWM']
+    defs = ['BKS', 'FNM', 'TAK', 'MCV', 'ZCV', 'POW', 'PRC', 'PRS', 'PUR', 'PWM']
     kicks = ['KAC', 'KPW']
     words_for_all = ['image', 'jersey_number', 'last_name', 'player_id', 
                      'quicksell_amount', 'release_date', 'salary_cap_cost', 'team', 'has_power_up', 'archetype_id']
