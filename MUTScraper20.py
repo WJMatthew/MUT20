@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 import warnings;
+
 warnings.simplefilter('ignore')
 from random import shuffle
 import time
@@ -23,7 +24,6 @@ import os
 prefix = 'https://www.muthead.com'
 DATA_PATH = 'data'
 
-
 # Map archetype_id to archtype name (incomplete - no defensive yet)
 # TODO: where are the FBs?
 archetype_map = {4: 'Field General (QB)', 16: 'Improvisor (QB)', 40: 'Scrambler (QB)', 45: 'Strong Arm (QB)',
@@ -36,20 +36,23 @@ archetype_map = {4: 'Field General (QB)', 16: 'Improvisor (QB)', 40: 'Scrambler 
                  3: 'Vertical Threat (TE)', 14: 'Blocking (TE)', 44: 'Possession (TE)',
                  }
 
+
 def get_archtype(arch_id):
     if arch_id in archetype_map.keys():
         return archetype_map[arch_id]
     else:
         return 'N/A'
 
+
 def make_dirs(path):
     """
-    
+
     """
     if not os.path.isdir(path):
         print("Creating directory", path)
         os.makedirs(path)
-        
+
+
 def save_to_csv(new_df, path):
     """
     """
@@ -70,18 +73,24 @@ def save_to_csv(new_df, path):
 
 
 def make_set_of_completed_player_ids():
+    """
+    Create set of ints that represent player ids so we don't repeat scrape.
+    :return:
+    """
     completed_ids = set()
-        
+
     dfs = {}
 
     for file in os.listdir(DATA_PATH):
         if '.csv' in file:
             df = pd.read_csv(os.path.join(DATA_PATH, file))
             _ = [completed_ids.add(int(v)) for v in df['player_id'].values]
-    return completed_ids # set(int)
-            
+    return completed_ids  # set(int)
+
+
 class Player:
     """
+    Class for holding player data including link, full link, and json form of data.
     """
 
     def __init__(self, link):
@@ -98,7 +107,7 @@ class Player:
     def get_json(self):
         tag = self.soup.find('article', class_='mut-card')
         if tag is None:
-            #print(f'No json found for {self.link}')
+            # print(f'No json found for {self.link}')
             print("No json found for", self.link)
         else:
             json_str = tag.attrs['data-props']
@@ -110,6 +119,7 @@ class Player:
 
 class PlayerHandler:
     """
+    Main class for manipulating players and scraping. Creates Player objects and stores them while scraping.
     """
 
     def __init__(self, date, url='https://www.muthead.com/20/players/', pages=0):
@@ -128,16 +138,18 @@ class PlayerHandler:
 
     def handle_players(self, pages=None):
         """
+        Limit players, retrieve all links, filter already scraped players, and finally scrape the data.
         """
         if pages is not None:
             self.n_pages = pages
         self.get_player_links()
-        # TODO: not working, also drop duplicates of player_id if not this (AND)
         self.filter_player_links()
         self.make_player_list()
 
     def get_num_pages(self):
         """
+        Returns the number of pages on url to scrape.
+        :return: int
         """
         response = requests.get(self.url)
         soup = BeautifulSoup(response.text, 'lxml')
@@ -147,20 +159,21 @@ class PlayerHandler:
         except:
             print('Error getting number of pages')
             n_pages = 0
-        #print(f'Number of pages: {n_pages}')
+        # print(f'Number of pages: {n_pages}')
         print('Number of pages:', n_pages)
         return n_pages
 
     def save_player_json(self, dict_list):
         """
+        Save the data for this date into json file for parsing afterwards.
         """
-        #with open(f'player_json_{self.date}', 'w') as fout:
-        with open('player_json_'+self.date, 'w') as fout:
+        # with open(f'player_json_{self.date}', 'w') as fout:
+        with open('player_json_' + self.date, 'w') as fout:
             json.dump(dict_list, fout)
-            
+
     def filter_player_links(self):
         """
-        Remove already scraped players from player_links
+        Remove already scraped players from player_links.
         """
         print("Filtering player list, before:", len(self.player_links))
         completed_ids = make_set_of_completed_player_ids()
@@ -169,13 +182,15 @@ class PlayerHandler:
 
     def get_player_links(self):
         """
+
+        :return:
         """
         links = []
 
         for i in range(1, self.n_pages + 1):
 
             try:
-                #url = f'{self.url}?page={i}'
+                # url = f'{self.url}?page={i}'
                 url = self.url + '&page=' + str(i)
                 response = requests.get(url)
                 soup = BeautifulSoup(response.text, 'lxml')
@@ -184,18 +199,20 @@ class PlayerHandler:
                     links.append(link.get('href'))
 
             except Exception:
-                #print(f'breaking... {len(links)} links gathered.')
-                print('breaking...', len(links),  'links gathered.')
+                # print(f'breaking... {len(links)} links gathered.')
+                print('breaking...', len(links), 'links gathered.')
                 break
 
         self.player_links = [s for s in links if 'prices' not in s]
         self.player_links = [x for x in self.player_links if x != '/20/players/']
         shuffle(self.player_links)
-        #print(f' {len(self.player_links)} player links gathered.')
+        # print(f' {len(self.player_links)} player links gathered.')
         print(len(self.player_links), 'player links gathered.')
 
     def make_player_list(self):
         """
+
+        :return:
         """
 
         for player_link in self.player_links:
@@ -237,7 +254,8 @@ class JSONParser:
                'toughness': 'TGH'}
 
     other_keepers = ['image', 'jersey_number', 'last_name', 'last_updated', 'name', 'program_id', 'has_power_up',
-                     'quicksell_amount', 'quicksell_currency', 'release_date', 'running_style', 'salary_cap_cost', 'archetype_id']
+                     'quicksell_amount', 'quicksell_currency', 'release_date', 'running_style', 'salary_cap_cost',
+                     'archetype_id']
 
     both_traits = ['trait_clutch', 'trait_high_motor', 'trait_penalty', ]
     off_traits = ['trait_aggressive_catches', 'trait_covers_the_ball', 'trait_drops_open_passes',
@@ -257,7 +275,7 @@ class JSONParser:
             'RBK', 'RBP', 'RLS', 'PBF', 'PBK', 'PBP']
     defs = ['BKS', 'FNM', 'TAK', 'MCV', 'ZCV', 'POW', 'PRC', 'PRS', 'PUR', 'PWM']
     kicks = ['KAC', 'KPW']
-    words_for_all = ['image', 'jersey_number', 'last_name', 'player_id', 
+    words_for_all = ['image', 'jersey_number', 'last_name', 'player_id',
                      'quicksell_amount', 'release_date', 'salary_cap_cost', 'team', 'has_power_up', 'archetype_id']
 
     position_dict = {'QB': ['QB'],
@@ -272,7 +290,7 @@ class JSONParser:
 
     def __init__(self, date):
         self.date = date
-        #self.filename = f'player_json_{date}'
+        # self.filename = f'player_json_{date}'
         self.filename = 'player_json_' + date
         self.datastore = []
         self.parsed_items = []
@@ -281,6 +299,11 @@ class JSONParser:
         make_dirs(DATA_PATH)
 
     def parse_player_json(self, player_dict):
+        """
+
+        :param player_dict:
+        :return:
+        """
 
         traits = [x for x in player_dict if 'trait' in x and player_dict[x] != None]
 
@@ -301,14 +324,28 @@ class JSONParser:
         return return_dict
 
     def load_json(self, filename=None):
+        """
+        Load json object containing player data.
+        :param filename:
+        :return:
+        """
         if filename is None: filename = self.filename
         with open(filename, 'r') as f:
             self.datastore = json.load(f)
 
     def parse_json_items(self):
+        """
+
+        :return:
+        """
         self.parsed_items = [self.parse_player_json(x) for x in self.datastore]
 
     def add_more_players(self, players_to_add):
+        """
+        Add small list of players by urls, # TODO: deprecated?
+        :param players_to_add:
+        :return:
+        """
         for pta in players_to_add:
             p = Player(pta)
             p.get_ratings()
@@ -316,18 +353,27 @@ class JSONParser:
             self.parsed_items.append(parsed)
 
     def jsons_to_dataframe(self):
+        """
+        Converts a json object to a pandas dataframe.
+        :return:
+        """
         self.df = pd.DataFrame(self.parsed_items)
 
     def save_to_csv(self):
+        """
+        Save data to csv files filtered by position (OFF, DEF, QB, ST).
+        :return:
+        """
 
         self.df_dict = {}
 
         for pos_group, positions in self.position_dict.items():
-       
+
             try:
-                self.df_dict[pos_group] = self.df[ self.df['position'].isin(self.position_dict[pos_group])][self.orders_dict[pos_group]]
-                #self.df_dict[pos_group].reset_index(drop=True).to_csv(f'{self.date}_{pos_group}.csv', index=False)
-                #self.df_dict[pos_group].reset_index(drop=True).to_csv('_'.join([self.date, pos_group]) + '.csv', index=False)
+                self.df_dict[pos_group] = self.df[self.df['position'].isin(self.position_dict[pos_group])][
+                    self.orders_dict[pos_group]]
+                # self.df_dict[pos_group].reset_index(drop=True).to_csv(f'{self.date}_{pos_group}.csv', index=False)
+                # self.df_dict[pos_group].reset_index(drop=True).to_csv('_'.join([self.date, pos_group]) + '.csv', index=False)
                 if len(self.df_dict[pos_group]) > 0:
                     new = self.df_dict[pos_group].reset_index(drop=True)
                     new['date_scraped'] = self.date
