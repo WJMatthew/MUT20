@@ -251,7 +251,7 @@ class JSONParser:
                'speed': 'SPD', 'spin_move': 'SPM', 'stamina': 'STA', 'external_id': 'player_id',
                'stiff_arm': 'SFA', 'strength': 'STR', 'tackle': 'TAK', 'throw_accuracy': 'TAC',
                'throw_power': 'THP', 'throw_under_pressure': 'TUP', 'throwing_on_the_run': 'TOR',
-               'toughness': 'TGH'}
+               'toughness': 'TGH', 'zone_coverage': 'ZCV'}
 
     other_keepers = ['image', 'jersey_number', 'last_name', 'last_updated', 'name', 'program_id', 'has_power_up',
                      'quicksell_amount', 'quicksell_currency', 'release_date', 'running_style', 'salary_cap_cost',
@@ -380,4 +380,5 @@ class JSONParser:
                     path = os.path.join(DATA_PATH, '.'.join([pos_group, 'csv']))
                     save_to_csv(new, path)
             except:
+                print('Problem saving', pos_group, '!')
                 pass
