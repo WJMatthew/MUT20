@@ -26,15 +26,27 @@ DATA_PATH = 'data'
 
 # Map archetype_id to archtype name (incomplete - no defensive yet)
 # TODO: where are the FBs?
-archetype_map = {4: 'Field General (QB)', 16: 'Improvisor (QB)', 40: 'Scrambler (QB)', 45: 'Strong Arm (QB)',
+# Hester, Dante Hall - 47: Unknown
+archetype_map = {#Offensive
+                 4: 'Field General (QB)', 16: 'Improvisor (QB)', 40: 'Scrambler (QB)', 45: 'Strong Arm (QB)',
                  5: 'Physical (WR)', 8: 'Route Running (WR)', 10: 'Deep Threat (WR)', 36: 'Slot (WR)',
-                 47: 'Unknown',
+                 47: 'Returner (WR)',
                  26: 'Elusive Back (HB)', 30: 'Powerback (HB)', 33: 'Receiving Back (HB)',
                  15: 'Power (OT)', 7: 'Pass Protector (OT)',
                  11: 'Power (OG)', 19: 'Pass Protector (OG)', 46: 'Agile (OG)',
                  18: 'Power (C)', 38: 'Agile (C)', 39: 'Pass Protector (C)',
                  3: 'Vertical Threat (TE)', 14: 'Blocking (TE)', 44: 'Possession (TE)',
+                 1: 'Man-to-Man (CB)', 24: 'Slot (CB)', 37: 'Zone (CB)', 
+                 # Defensive
+                 2: 'Hybrid (FS/SS)', 17: 'Zone (FS/SS)', 21: 'Run Support (FS/SS)'
                  }
+    
+enforcer_dict = {1: {'OVR': 95, 'POW': 95}, 
+                 24: {'OVR': 95, 'POW': 95},
+                 37: {'OVR': 95, 'POW': 95},
+                 2: {'OVR': 0, 'POW': 90},
+                 21: {'OVR': 0, 'POW': 90},
+                 17: {'OVR': 95, 'POW': 95}}
 
 
 def get_archtype(arch_id):
@@ -42,6 +54,22 @@ def get_archtype(arch_id):
         return archetype_map[arch_id]
     else:
         return 'N/A'
+
+def enforcer_check(arch_id, ovr, hit_power, pu):
+    
+    if arch_id not in archetype_map.keys():
+        return 'N/A'
+    elif arch_id not in enforcer_dict.keys():
+        return False
+    
+    if pu:
+        hit_power = hit_power + 1
+        ovr = ovr + 1
+        
+    requirements = enforcer_dict[arch_id]
+    if ovr >= requirements['OVR'] and hit_power >= requirements['POW']:
+        return True
+    return False
 
 
 def make_dirs(path):
