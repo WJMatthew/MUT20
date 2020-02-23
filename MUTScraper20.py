@@ -397,7 +397,7 @@ class JSONParser:
 
         for pos_group, positions in self.position_dict.items():
 
-            try:
+            #try:
                 self.df_dict[pos_group] = self.df[self.df['position'].isin(self.position_dict[pos_group])][
                     self.orders_dict[pos_group]]
                 # self.df_dict[pos_group].reset_index(drop=True).to_csv(f'{self.date}_{pos_group}.csv', index=False)
@@ -407,6 +407,6 @@ class JSONParser:
                     new['date_scraped'] = self.date
                     path = os.path.join(DATA_PATH, '.'.join([pos_group, 'csv']))
                     save_to_csv(new, path)
-            except:
-                print('Problem saving', pos_group, '!')
-                pass
+            #except:
+                #print('Problem saving', pos_group, '!')
+                #pass
